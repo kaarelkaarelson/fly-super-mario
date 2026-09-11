@@ -6,4 +6,4 @@ The brain is MaleCNS v1.0 — the complete wiring diagram of an adult male fruit
 
 This page is a recorded 60-second run: one video of the game and the brain's live activity, with the controller overlay driven by the recorded button presses.
 
-Developed by [Kaarel Kaarelson](https://kaarelkaarelson.com). Mario icon by [Icons8](https://icons8.com).
+Developed with 💙 by [Kaarel Kaarelson](https://kaarelkaarelson.com). Mario icon by [Icons8](https://icons8.com).
