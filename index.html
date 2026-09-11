@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly Plays Super Mario</title>
+<meta name="description" content="A real fruit fly connectome (MaleCNS v1.0, 166,700 neurons) wired to Super Mario Bros. No training, no reward.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121822; --border: #1f2733;
+    --cyan: #6cdaed; --gold: #ffca72; --muted: #66788c; --text: #e8edf2;
+  }
+  html, body { margin: 0; padding: 0; background: var(--bg); overflow: hidden; width: 100%; height: 100%; }
+  #viewport { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg); }
+  #stage {
+    width: 1920px; height: 1080px; position: relative; background: var(--bg);
+    font-family: -apple-system, sans-serif; color: var(--text); flex-shrink: 0; transform-origin: center center;
+  }
+  /* The whole stage below the header is one baked video: both panels at the
+     same geometry as the live page. Header, controller and badge stay HTML. */
+  #replay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; display: block; z-index: 0; }
+  header {
+    position: absolute; top: 0; left: 0; width: 1920px; height: 150px; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #0e1420 0%, var(--bg) 100%); border-bottom: 2px solid var(--border);
+  }
+  h1 {
+    font-family: 'Press Start 2P', monospace; font-size: 42px; margin: 0; letter-spacing: 2px;
+    color: var(--gold); text-shadow: 0 0 18px rgba(255,202,114,0.45);
+  }
+  h1 .hdr-icon {
+    height: 1.25em; width: auto; vertical-align: -0.2em; margin-left: -0.35em;
+    filter: drop-shadow(0 0 10px rgba(255,202,114,0.35));
+  }
+  .subtitle { margin-top: 14px; font-size: 15px; color: var(--muted); letter-spacing: 1px; }
+  .subtitle b { color: var(--cyan); font-weight: 600; }
+  .badge {
+    position: absolute; top: 200px; right: 994px; z-index: 2;
+    font-family: 'Press Start 2P', monospace; font-size: 11px; letter-spacing: 1px;
+    color: var(--cyan); background: rgba(11,15,20,0.72); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 9px;
+  }
+  #controller-wrap {
+    position: absolute; top: 910px; left: 60px; width: 878px; z-index: 2;
+    display: flex; justify-content: center; align-items: center;
+  }
+  footer {
+    position: absolute; bottom: 4px; left: 0; width: 1920px; z-index: 2;
+    text-align: center; font-size: 12px; color: var(--muted); letter-spacing: 0.5px;
+  }
+  footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid rgba(102,120,140,0.5); }
+  footer a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
+  #tap { position: absolute; inset: 0; z-index: 3; display: none; align-items: center; justify-content: center;
+         background: rgba(11,15,20,0.6); font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--gold); cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="viewport">
+<div id="stage">
+  <video id="replay" src="replay.mp4" autoplay muted loop playsinline preload="auto"></video>
+
+  <header>
+    <h1>🍄 FLY PLAYS SUPER MARIO <img class="hdr-icon" alt="Mario" src="mario.png"></h1>
+    <div class="subtitle">real fruit fly connectome &middot; <b>MaleCNS v1.0</b> &middot; 166,700 neurons</div>
+  </header>
+
+  <div class="badge" id="fps">-- FPS</div>
+  <div id="controller-wrap"></div>
+
+  <footer>
+    Made with 💙 by <a href="https://kaarelkaarelson.com">Kaarel Kaarelson</a>
+    &nbsp;&middot;&nbsp; Mario icon by <a href="https://icons8.com">Icons8</a>
+  </footer>
+  <div id="tap">▶ TAP TO PLAY</div>
+</div>
+</div>
+
+<script src="replay.js"></script>
+<script>
+function fitStage() {
+  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  document.getElementById('stage').style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', fitStage);
+fitStage();
+
+const CONTROLLER_SVG = `
+<svg width="420" height="140" viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4" y="4" width="412" height="132" rx="20" fill="#1a2028" stroke="#2b3441" stroke-width="3"/>
+  <g id="dpad">
+    <rect x="55" y="45" width="50" height="50" fill="#232b36"/>
+    <rect id="btn-up"    x="68" y="28" width="24" height="24" fill="#3a4552"/>
+    <rect id="btn-down"  x="68" y="80" width="24" height="24" fill="#3a4552"/>
+    <rect id="btn-left"  x="34" y="62" width="24" height="24" fill="#3a4552"/>
+    <rect id="btn-right" x="100" y="62" width="24" height="24" fill="#3a4552"/>
+  </g>
+  <rect x="168" y="80" width="36" height="12" rx="6" fill="#2b3441"/>
+  <rect x="216" y="80" width="36" height="12" rx="6" fill="#2b3441"/>
+  <text x="186" y="108" font-size="9" fill="#5a6b7d" text-anchor="middle" font-family="sans-serif">SELECT</text>
+  <text x="234" y="108" font-size="9" fill="#5a6b7d" text-anchor="middle" font-family="sans-serif">START</text>
+  <circle id="btn-b" cx="315" cy="70" r="24" fill="#3a2020"/>
+  <text x="315" y="75" font-size="18" fill="#8a5a5a" text-anchor="middle" font-family="sans-serif" font-weight="bold" id="btn-b-label">B</text>
+  <circle id="btn-a" cx="375" cy="50" r="24" fill="#3a2020"/>
+  <text x="375" y="55" font-size="18" fill="#8a5a5a" text-anchor="middle" font-family="sans-serif" font-weight="bold" id="btn-a-label">A</text>
+</svg>`;
+document.getElementById('controller-wrap').innerHTML = CONTROLLER_SVG;
+
+const ACTIVE_DIR = '#ffca72', ACTIVE_GLOW_DIR = 'drop-shadow(0 0 8px rgba(255,202,114,0.9))';
+const ACTIVE_BTN = '#6cdaed', ACTIVE_GLOW_BTN = 'drop-shadow(0 0 10px rgba(108,218,237,0.9))';
+const IDLE_DIR = '#3a4552', IDLE_BTN = '#3a2020';
+
+function setButton(id, active, activeFill, glow, idleFill) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.setAttribute('fill', active ? activeFill : idleFill);
+  el.style.filter = active ? glow : 'none';
+}
+function applyBits(bits) {
+  const B = REPLAY.bits;
+  setButton('btn-left',  bits & B.left,  ACTIVE_DIR, ACTIVE_GLOW_DIR, IDLE_DIR);
+  setButton('btn-right', bits & B.right, ACTIVE_DIR, ACTIVE_GLOW_DIR, IDLE_DIR);
+  setButton('btn-up',    bits & B.up,    ACTIVE_DIR, ACTIVE_GLOW_DIR, IDLE_DIR);
+  setButton('btn-down',  bits & B.down,  ACTIVE_DIR, ACTIVE_GLOW_DIR, IDLE_DIR);
+  setButton('btn-a',     bits & B.A,     ACTIVE_BTN, ACTIVE_GLOW_BTN, IDLE_BTN);
+  setButton('btn-b',     bits & B.B,     ACTIVE_BTN, ACTIVE_GLOW_BTN, IDLE_BTN);
+  document.getElementById('btn-a-label').setAttribute('fill', (bits & B.A) ? '#0b0f14' : '#8a5a5a');
+  document.getElementById('btn-b-label').setAttribute('fill', (bits & B.B) ? '#0b0f14' : '#8a5a5a');
+}
+
+const video = document.getElementById('replay');
+document.getElementById('fps').textContent = REPLAY.fps.toFixed(1) + ' FPS';
+let lastFrame = -1;
+function tick() {
+  const frame = Math.floor(video.currentTime * REPLAY.fps) % REPLAY.frames;
+  if (frame !== lastFrame) { applyBits(REPLAY.buttons[frame] || 0); lastFrame = frame; }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+// Autoplay is muted so browsers allow it; if one still refuses, show a tap-to-play overlay.
+const tap = document.getElementById('tap');
+video.play().catch(() => { tap.style.display = 'flex'; });
+tap.addEventListener('click', () => { video.play(); tap.style.display = 'none'; });
+</script>
+</body>
+</html>
